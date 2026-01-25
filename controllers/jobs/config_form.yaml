@@ -1,0 +1,47 @@
+# ===================================
+#  Form Behavior Config
+# ===================================
+
+# Record name
+name: "palpalych.aitranslator::lang.job.list_title"
+
+# Model Form Field configuration
+form: $/palpalych/aitranslator/models/job/fields.yaml
+
+# Model Class name
+modelClass: PalPalych\AiTranslator\Models\Job
+
+# Default redirect location
+defaultRedirect: palpalych/aitranslator/jobs
+
+# Create page
+create:
+    title: backend::lang.form.create_title
+    redirect: palpalych/aitranslator/jobs/update/:id
+    redirectClose: palpalych/aitranslator/jobs
+
+# Update page
+update:
+    title: backend::lang.form.update_title
+    redirect: palpalych/aitranslator/jobs
+    redirectClose: palpalych/aitranslator/jobs
+
+# Preview page
+preview:
+    title: backend::lang.form.preview_title
+    toolbar:
+        buttons:
+            - label: "Approve & Apply"
+              class: "btn-success"
+              icon: "icon-check"
+              context: ["preview", "update"]
+              request: "onApprove"
+              request-data:
+                  redirect: 0
+            - label: "Mark as Failed"
+              class: "btn-danger"
+              icon: "icon-times"
+              context: ["preview", "update"]
+              request: "onFail"
+              request-data:
+                  redirect: 0

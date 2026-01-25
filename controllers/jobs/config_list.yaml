@@ -1,0 +1,28 @@
+# List Title
+title: "palpalych.aitranslator::lang.job.list_title"
+
+# Model Class name
+modelClass: PalPalych\AiTranslator\Models\Job
+
+# Model List Column configuration
+list: ~/plugins/palpalych/aitranslator/models/job/columns.yaml
+
+# Link URL for each record
+recordUrl: palpalych/aitranslator/jobs/update/:id
+
+# Message to display if the list is empty
+noRecordsMessage: "backend::lang.list.no_records"
+
+# Records to display per page
+recordsPerPage: 20
+
+# Toolbar widget configuration
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: "backend::lang.list.search_prompt"
+
+# Filter Configuration
+filter: config_filter.yaml
+
+defaultSort: id desc

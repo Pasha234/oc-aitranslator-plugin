@@ -1,0 +1,38 @@
+scopes:
+    source_locale:
+        label: "palpalych.aitranslator::lang.job.source_locale"
+        type: group
+        conditions: source_locale in (:filtered)
+        options:
+            en: English
+            ru: Russian
+            es: Spanish
+
+    target_locale:
+        label: "palpalych.aitranslator::lang.job.target_locale"
+        type: group
+        conditions: target_locale in (:filtered)
+        options:
+            en: English
+            ru: Russian
+            es: Spanish
+
+    prompt:
+        label: "palpalych.aitranslator::lang.job.prompt"
+        modelClass: PalPalych\AiTranslator\Models\Prompt
+        conditions: prompt_id in (:filtered)
+        nameFrom: name
+
+    status:
+        label: "palpalych.aitranslator::lang.job.status"
+        type: group
+        conditions: status in (:filtered)
+        modelClass: PalPalych\AiTranslator\Models\Job
+        options: getStatusOptions
+
+    translatable_type:
+        label: "palpalych.aitranslator::lang.job.translatable_type"
+        type: group
+        conditions: translatable_type in (:filtered)
+        modelClass: PalPalych\AiTranslator\Models\Job
+        options: getTranslatableTypeOptions

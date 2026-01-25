@@ -1,0 +1,23 @@
+# ===================================
+#  Field Definitions
+# ===================================
+
+tabs:
+    fields:
+        anthropic_api_key:
+            label: Claude API Key
+            span: left
+
+        default_driver:
+            label: Default Driver
+            type: dropdown
+            span: right
+            comment: "Select the default translation driver."
+            options: getDefaultDriverOptions
+
+        default_prompt_id:
+            label: Default Prompt
+            type: dropdown
+            span: left
+            comment: "Select the default prompt for translations."
+            options: getDefaultPromptOptions

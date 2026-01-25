@@ -1,0 +1,5 @@
+v1.0.1:
+    - First version of AiTranslator
+    - create_jobs_table.php
+    - create_prompts_table.php
+    - create_field_translations_table.php

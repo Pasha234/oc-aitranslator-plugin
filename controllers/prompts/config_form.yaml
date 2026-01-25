@@ -1,0 +1,31 @@
+# ===================================
+#  Form Behavior Config
+# ===================================
+
+# Record name
+name: Промпт
+
+# Model Form Field configuration
+form: $/palpalych/aitranslator/models/prompt/fields.yaml
+
+# Model Class name
+modelClass: PalPalych\AiTranslator\Models\Prompt
+
+# Default redirect location
+defaultRedirect: palpalych/aitranslator/prompts
+
+# Create page
+create:
+    title: backend::lang.form.create_title
+    redirect: palpalych/aitranslator/prompts/update/:id
+    redirectClose: palpalych/aitranslator/prompts
+
+# Update page
+update:
+    title: backend::lang.form.update_title
+    redirect: palpalych/aitranslator/prompts
+    redirectClose: palpalych/aitranslator/prompts
+
+# Preview page
+preview:
+    title: backend::lang.form.preview_title

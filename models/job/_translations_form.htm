@@ -1,0 +1,70 @@
+<?php
+    $job = $formModel;
+    $translatable = $job->translatable;
+    $fieldTranslations = $job->fields;
+
+    // Retrieve the widgets prepared in the Controller
+    $widgets = $this->vars['translationWidgets'] ?? [];
+?>
+
+<?php if ($translatable): ?>
+    <div class="form-group">
+        <h4 class="mb-3">
+            <?= e(trans('palpalych.aitranslator::lang.job.translatable_item')) ?>:
+            <span class="text-muted">
+                <?= e(class_basename($translatable)) ?>
+                #<?= e($translatable->id) ?>
+                (<?= e($job->source_locale) ?> &rarr; <?= e($job->target_locale) ?>)
+            </span>
+        </h4>
+    </div>
+    <hr>
+<?php endif; ?>
+
+<?php if ($fieldTranslations->count()): ?>
+    <?php foreach ($fieldTranslations as $field): ?>
+        <div class="layout-row mb-4">
+            <div class="row">
+                <!-- Left Column: Original Value -->
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>
+                            <?= ucfirst($field->field_name) ?>
+                            <span class="text-muted">(<?= e(trans('palpalych.aitranslator::lang.job.original_value')) ?>)</span>
+                        </label>
+                        <!-- Read-only container -->
+                        <div class="form-control control-disabled"
+                             style="height: 350px; overflow-y: auto; background-color: #f9f9f9; border: 1px solid #e1e1e1;">
+                            <?= $field->original_value ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Final Value (Rich Editor Widget) -->
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>
+                            <?= ucfirst($field->field_name) ?>
+                            <span class="text-muted">(<?= e(trans('palpalych.aitranslator::lang.job.final_value')) ?>)</span>
+                        </label>
+
+                        <!-- Render the Widget -->
+                        <?php if (isset($widgets[$field->id])): ?>
+                            <!-- Force specific height on the wrapper to match left side -->
+                            <div style="height: 350px; overflow-y: auto;">
+                                <?= $widgets[$field->id]->render() ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="alert alert-danger">Widget not loaded for field <?= $field->id ?></div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr>
+    <?php endforeach; ?>
+<?php else: ?>
+    <p class="flash-message static warning">
+        No translatable fields found for this job.
+    </p>
+<?php endif; ?>

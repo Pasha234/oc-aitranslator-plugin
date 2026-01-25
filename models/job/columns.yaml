@@ -1,0 +1,36 @@
+# ===================================
+#  List Column Definitions
+# ===================================
+
+columns:
+    id:
+        label: ID
+        searchable: true
+
+    source_locale:
+        label: "palpalych.aitranslator::lang.job.source_locale"
+        searchable: true
+
+    target_locale:
+        label: "palpalych.aitranslator::lang.job.target_locale"
+        searchable: true
+
+    # target_site:
+    #     label: "palpalych.aitranslator::lang.job.target_site"
+    #     relation: target_site
+    #     select: name
+    #     searchable: true
+
+    translatable:
+        label: "palpalych.aitranslator::lang.job.translatable"
+        type: partial
+        path: ~/plugins/palpalych/aitranslator/models/job/_translatable_column.htm
+        searchable: false
+
+    status:
+        label: "palpalych.aitranslator::lang.job.status"
+        displayFrom: status_name
+
+    created_at:
+        label: "backend::lang.user.created_at"
+        type: datetime

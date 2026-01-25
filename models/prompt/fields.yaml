@@ -1,0 +1,10 @@
+# ===================================
+#  Form Field Definitions
+# ===================================
+
+fields:
+    name:
+        label: Название
+    system_instruction:
+        label: Системный промпт
+        type: textarea

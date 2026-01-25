@@ -1,0 +1,24 @@
+<?php
+    $translatable = $record->translatable;
+?>
+
+<?php if ($translatable): ?>
+    <?php
+        // Try to get a friendly name, fallback to ID
+        $displayName = $translatable->title
+            ?? $translatable->name
+            ?? $translatable->headline
+            ?? ('#' . $translatable->getKey());
+
+        $className = class_basename($translatable);
+    ?>
+    <div title="<?= e(get_class($translatable)) ?> (ID: <?= $translatable->getKey() ?>)">
+        <small class="text-muted"><?= e($className) ?>:</small>
+        <strong><?= e(str_limit($displayName, 30)) ?></strong>
+    </div>
+<?php else: ?>
+    <span class="text-muted">
+        <em>Deleted or N/A</em>
+        <small>(ID: <?= e($record->translatable_id) ?>)</small>
+    </span>
+<?php endif; ?>

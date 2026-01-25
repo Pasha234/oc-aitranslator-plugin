@@ -1,0 +1,50 @@
+# ===================================
+#  Form Field Definitions
+# ===================================
+
+tabs:
+    fields:
+        fields:
+            label: "palpalych.aitranslator::lang.job.translations"
+            icon: icon-language
+            type: partial
+            path: ~/plugins/palpalych/aitranslator/models/job/_translations_form.htm
+            tab: "palpalych.aitranslator::lang.job.translation_tab"
+
+        driver:
+            label: Сервис перевода
+            readOnly: true
+            tab: Ответ сервиса
+
+        error_message:
+            label: Сообщение ошибки
+            type: textarea
+            placeholder: Нет ошибки
+            readOnly: true
+            tab: Ответ сервиса
+
+        driver_response_json:
+            label: Ответ сервиса
+            type: partial
+            tab: Ответ сервиса
+
+secondaryTabs:
+    fields:
+        status:
+            label: "palpalych.aitranslator::lang.job.status"
+            type: dropdown
+            options: getStatusOptions
+        created_at:
+            label: "backend::lang.user.created_at"
+            type: datepicker
+            readOnly: true
+        source_locale:
+            label: "palpalych.aitranslator::lang.job.source_locale"
+            readOnly: true
+        target_locale:
+            label: "palpalych.aitranslator::lang.job.target_locale"
+            readOnly: true
+        prompt:
+            label: "palpalych.aitranslator::lang.job.prompt"
+            type: relation
+            readOnly: true

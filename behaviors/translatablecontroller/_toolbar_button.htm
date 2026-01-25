@@ -1,0 +1,33 @@
+<?php
+    use October\Rain\Support\Facades\Site;
+
+    // 1. Logic to determine sites
+    $currentSiteId = Site::getSiteIdFromContext();
+
+    $otherSites = Site::listEnabled()->filter(function($site) use ($currentSiteId) {
+        return $site->id != $currentSiteId;
+    });
+?>
+
+<?php if ($otherSites->count() > 0): ?>
+    <div class="btn-group">
+        <button
+            type="button"
+            class="btn btn-primary oc-icon-magic dropdown-toggle"
+            data-toggle="dropdown">
+            AI Translate
+        </button>
+        <ul class="dropdown-menu" role="menu">
+            <?php foreach ($otherSites as $site): ?>
+                <li>
+                    <a href="javascript:;"
+                        data-ajax-handler="onInitAiTranslation"
+                        data-request-data="target_site_id: <?= $site->id ?>, target_locale: '<?= $site->locale ?>'"
+                        class="oc-icon-globe">
+                            To: <?= e($site->name) ?>
+                    </a>
+                </li>
+            <?php endforeach ?>
+        </ul>
+    </div>
+<?php endif; ?>

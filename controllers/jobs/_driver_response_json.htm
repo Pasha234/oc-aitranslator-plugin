@@ -1,0 +1,30 @@
+<?php
+$job = $formModel;
+$rawJson = $job->driver_response ?: '{}';
+$decodedResponse = $formModel->driver_response ? json_decode($formModel->driver_response) : new stdClass();
+?>
+
+<div
+    id="json-renderer-<?= $job->id ?>"
+    class="control-scrollpad"
+    data-json="<?= e($rawJson) ?>"
+></div>
+
+<script>
+    var $el = $("#json-renderer-<?= $job->id ?>");
+
+    var jsonData = $el.data('json');
+
+    if (typeof jsonData === 'string') {
+        try {
+            jsonData = JSON.parse(jsonData);
+        } catch (e) {
+            console.error("JSON Parse Error:", e);
+            jsonData = { error: "Invalid JSON format in database", raw: jsonData };
+        }
+    }
+
+    $el.jJsonViewer(jsonData, {
+        expanded: true
+    });
+</script>
