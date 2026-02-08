@@ -4,7 +4,7 @@
 </div>
 
 <?= Form::open(['id' => 'ai-review-form']) ?>
-<div class="modal-body" style="height: 800px;">
+<div class="modal-body" style="max-height: 600px; overflow-y: auto;">
     <!-- Send the Job ID so we know what to apply -->
         <input type="hidden" name="job_id" value="<?= $job->id ?>" />
 
@@ -17,8 +17,8 @@
 
         <!-- Loop through the fields (Title, Content, etc) -->
         <?php foreach($job->fields as $field): ?>
-            <div class="form-group" style="height: 500px;">
-                <label><?= ucfirst($field->field_name) ?></label>
+            <label><?= ucfirst($field->field_name) ?></label>
+            <div class="form-group" style="margin-bottom: 20px;">
 
                 <!--
                    We name the input fields[id][final_value]
@@ -29,6 +29,7 @@
                         class="field-richeditor size-giant layout-relative stretch"
                         data-control="richeditor"
                         data-editor-options="<?= e(json_encode($editorOptions)) ?>"
+                        style="min-height: 300px;"
                     >
                         <textarea
                             name="fields[<?= $field->id ?>]"

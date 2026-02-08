@@ -3,3 +3,5 @@ v1.0.1:
     - create_jobs_table.php
     - create_prompts_table.php
     - create_field_translations_table.php
+v1.0.2:
+    - Fix preview popup
