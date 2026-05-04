@@ -7,3 +7,5 @@ v1.0.2:
     - Fix preview popup
 v1.0.3:
     - Update of console command for batch translation
+v1.0.4:
+    - Update of console command to sleep after each translation

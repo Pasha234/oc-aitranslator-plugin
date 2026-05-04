@@ -34,7 +34,8 @@ class AutoTranslate extends Command
         {target_site_id? : The ID of the Site you want to translate TO}
         {--all-sites : Translate to every non-primary site}
         {--list-models : List discovered AI translatable models and exit}
-        {--limit=10 : How many records to process per target site}';
+        {--limit=10 : How many records to process per target site}
+        {--delay=60 : Seconds to wait after each successful translation}';
 
     public function handle()
     {
@@ -45,6 +46,7 @@ class AutoTranslate extends Command
 
         $modelClass = $this->resolveModelClass();
         $limit = (int) $this->option('limit');
+        $delay = (int) $this->option('delay');
 
         if (!$modelClass) {
             return;
@@ -75,15 +77,16 @@ class AutoTranslate extends Command
         $this->info("Source: {$primarySite->name} ({$primarySite->locale})");
         $this->info("Model: {$modelClass}");
         $this->info("Batch Size: {$limit} per target site");
+        $this->info("Delay: {$delay} seconds after each successful translation");
 
         foreach ($targetSites as $targetSite) {
-            $this->processTargetSite($modelClass, $primarySite, $targetSite, $limit);
+            $this->processTargetSite($modelClass, $primarySite, $targetSite, $limit, $delay);
         }
 
         $this->info("Batch completed.");
     }
 
-    protected function processTargetSite(string $modelClass, SiteDefinition $primarySite, SiteDefinition $targetSite, int $limit): void
+    protected function processTargetSite(string $modelClass, SiteDefinition $primarySite, SiteDefinition $targetSite, int $limit, int $delay): void
     {
         $this->newLine();
         $this->info("Target: {$targetSite->name} ({$targetSite->locale})");
@@ -113,6 +116,10 @@ class AutoTranslate extends Command
 
                     $service->processJob($job->id);
                 });
+
+                if ($delay > 0) {
+                    sleep($delay);
+                }
 
             } catch (\Exception $e) {
                 $this->error("\nError processing ID {$record->id} for site {$targetSite->id}: " . $e->getMessage());
