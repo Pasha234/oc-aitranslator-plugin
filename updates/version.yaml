@@ -5,3 +5,5 @@ v1.0.1:
     - create_field_translations_table.php
 v1.0.2:
     - Fix preview popup
+v1.0.3:
+    - Update of console command for batch translation
