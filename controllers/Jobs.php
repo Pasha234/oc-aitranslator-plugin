@@ -121,4 +121,87 @@ class Jobs extends Controller
             return;
         }
     }
+
+    public function index_onBulkApprove()
+    {
+        $checkedIds = $this->getCheckedJobIds();
+        $definition = post('definition', $this->primaryDefinition);
+
+        if (!$checkedIds) {
+            Flash::warning('Please select at least one job.');
+
+            return $this->listRefresh($definition);
+        }
+
+        $service = new TranslationService();
+        $approved = 0;
+        $failed = [];
+        $reviewJobs = Job::with(['fields', 'translatable'])
+            ->whereIn('id', $checkedIds)
+            ->where('status', JobStatus::review->value)
+            ->get();
+
+        $reviewJobs->each(function (Job $job) use ($service, &$approved, &$failed) {
+            try {
+                $service->applyJobToTarget($job);
+                $approved++;
+            } catch (\Exception $e) {
+                report($e);
+                $failed[] = "#{$job->id}: {$e->getMessage()}";
+            }
+        });
+
+        $skipped = count($checkedIds) - $reviewJobs->count();
+
+        if ($approved > 0) {
+            Flash::success("Approved {$approved} job(s).");
+        }
+
+        if ($skipped > 0) {
+            Flash::warning("Skipped {$skipped} job(s) because only in-review jobs can be approved.");
+        }
+
+        if ($failed) {
+            Flash::error('Some jobs could not be approved: ' . implode(' | ', $failed));
+        }
+
+        return $this->listRefresh($definition);
+    }
+
+    public function index_onBulkReject()
+    {
+        $checkedIds = $this->getCheckedJobIds();
+        $definition = post('definition', $this->primaryDefinition);
+
+        if (!$checkedIds) {
+            Flash::warning('Please select at least one job.');
+
+            return $this->listRefresh($definition);
+        }
+
+        $updated = Job::whereIn('id', $checkedIds)
+            ->where('status', JobStatus::review->value)
+            ->update([
+                'status' => JobStatus::rejected->value,
+            ]);
+
+        $skipped = count($checkedIds) - $updated;
+
+        if ($updated > 0) {
+            Flash::warning("Rejected {$updated} job(s).");
+        }
+
+        if ($skipped > 0) {
+            Flash::warning("Skipped {$skipped} job(s) because only in-review jobs can be rejected.");
+        }
+
+        return $this->listRefresh($definition);
+    }
+
+    private function getCheckedJobIds(): array
+    {
+        $checkedIds = (array) post('checked', []);
+
+        return array_values(array_filter($checkedIds, 'is_numeric'));
+    }
 }

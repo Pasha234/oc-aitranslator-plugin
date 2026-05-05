@@ -8,10 +8,17 @@ tabs:
             label: Claude API Key
             span: left
 
+        claude_max_tokens:
+            label: Claude Max Tokens
+            type: number
+            span: right
+            default: 16000
+            comment: "Maximum response tokens for Claude translations."
+
         default_driver:
             label: Default Driver
             type: dropdown
-            span: right
+            span: left
             comment: "Select the default translation driver."
             options: getDefaultDriverOptions
 

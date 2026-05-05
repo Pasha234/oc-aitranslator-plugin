@@ -2,7 +2,11 @@
 
 namespace PalPalych\AiTranslator\Classes\Drivers;
 
-use Http;
+use Anthropic\Client;
+use Anthropic\Core\Exceptions\APIException;
+use Anthropic\Messages\JSONOutputFormat;
+use Anthropic\Messages\OutputConfig;
+use Anthropic\RequestOptions;
 use PalPalych\AiTranslator\Models\Settings;
 use PalPalych\AiTranslator\Classes\Dto\TranslationRequestDto;
 use PalPalych\AiTranslator\Classes\Dto\TranslationResponseDto;
@@ -12,10 +16,13 @@ class ClaudeDriver implements LlmDriver
 {
     protected $apiKey;
     protected $model = 'claude-sonnet-4-5-20250929'; // Or generic claude-3-opus
+    protected Client $client;
+    protected int $defaultMaxTokens = 4000;
 
     public function __construct()
     {
         $this->apiKey = Settings::get('anthropic_api_key');
+        $this->client = new Client(apiKey: $this->apiKey);
     }
 
     public function translate(TranslationRequestDto $request): TranslationResponseDto
@@ -35,36 +42,50 @@ CRITICAL OUTPUT INSTRUCTIONS:
 5. Do not include markdown formatting (like ```json). Just the raw JSON string.
 EOT;
 
-        $response = Http::withHeaders([
-            'x-api-key' => $this->apiKey,
-            'anthropic-version' => '2023-06-01',
-            'content-type' => 'application/json',
-        ])->timeout(120)->post('https://api.anthropic.com/v1/messages', [
-            'model' => $this->model,
-            'max_tokens' => 4000,
-            'system' => $systemPrompt,
-            'messages' => [
-                [
-                    'role' => 'user',
-                    'content' => "Translate this JSON content from {$request->sourceLang} to {$request->targetLang}:\n" . $jsonContent,
-                ]
-            ],
-            'temperature' => 0.3, // Lower temp is better for strict JSON adherence
-        ]);
+        $requestOptions = (new RequestOptions())->withTimeout(120);
 
-        if (!$response->successful()) {
-            throw new \Exception('Claude API Error: ' . $response->body());
+        try {
+            $message = $this->client->messages->create(
+                maxTokens: $this->getMaxTokens(),
+                messages: [
+                    [
+                        'role' => 'user',
+                        'content' => "Translate this JSON content from {$request->sourceLang} to {$request->targetLang}:\n" . $jsonContent,
+                    ],
+                ],
+                model: $this->model,
+                outputConfig: OutputConfig::with(
+                    format: JSONOutputFormat::with(
+                        schema: $this->buildTranslationSchema($request->content->fields)
+                    )
+                ),
+                system: $systemPrompt,
+                temperature: 0.3,
+                requestOptions: $requestOptions,
+            );
+        } catch (APIException $e) {
+            throw new \Exception('Claude API Error: ' . $e->getMessage(), 0, $e);
         }
 
-        $body = $response->json();
+        if ($message->stopReason !== 'end_turn') {
+            $details = "stop_reason={$message->stopReason}, input_tokens={$message->usage->inputTokens}, output_tokens={$message->usage->outputTokens}";
+
+            if ($message->stopReason === 'max_tokens') {
+                throw new \Exception("Claude response was cut off before valid JSON was complete ({$details}). Increase max_tokens or translate smaller chunks.");
+            }
+
+            if ($message->stopReason === 'refusal') {
+                throw new \Exception("Claude refused the request, so structured JSON was not produced ({$details}).");
+            }
+
+            throw new \Exception("Claude did not finish normally ({$details}).");
+        }
 
         $responseText = '';
-        if (isset($body['content']) && is_array($body['content'])) {
-            foreach ($body['content'] as $block) {
-                if ($block['type'] === 'text') {
-                    $responseText = $block['text'];
-                    break;
-                }
+        foreach ($message->content as $block) {
+            if (($block->type ?? null) === 'text') {
+                $responseText = $block->text ?? '';
+                break;
             }
         }
 
@@ -76,6 +97,73 @@ EOT;
         }
 
         return new TranslationResponseDto($decoded, $cleanJson);
+    }
+
+    private function buildTranslationSchema(array $fields): array
+    {
+        $properties = [];
+        foreach ($fields as $key => $value) {
+            $properties[$key] = $this->schemaForValue($value);
+        }
+
+        $properties['ai_tags'] = [
+            'type' => 'array',
+            'items' => [
+                'type' => 'string',
+            ],
+        ];
+        $properties['ai_notes'] = [
+            'type' => 'string',
+        ];
+
+        return [
+            'type' => 'object',
+            'properties' => $properties,
+            'required' => array_keys($fields),
+            'additionalProperties' => false,
+        ];
+    }
+
+    private function schemaForValue($value): array
+    {
+        if (is_string($value)) {
+            return ['type' => 'string'];
+        }
+
+        if (is_int($value)) {
+            return ['type' => 'integer'];
+        }
+
+        if (is_float($value)) {
+            return ['type' => 'number'];
+        }
+
+        if (is_bool($value)) {
+            return ['type' => 'boolean'];
+        }
+
+        if (is_array($value)) {
+            if (array_keys($value) === range(0, count($value) - 1)) {
+                return [
+                    'type' => 'array',
+                    'items' => ['type' => 'string'],
+                ];
+            }
+
+            return [
+                'type' => 'object',
+                'additionalProperties' => true,
+            ];
+        }
+
+        return ['type' => 'string'];
+    }
+
+    private function getMaxTokens(): int
+    {
+        $maxTokens = (int) Settings::get('claude_max_tokens', $this->defaultMaxTokens);
+
+        return max(1024, min($maxTokens, 64000));
     }
 
     private function extractJson($text)

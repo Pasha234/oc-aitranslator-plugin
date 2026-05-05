@@ -3,6 +3,8 @@
 return [
     'anthropic_api_key' => '',
 
+    'claude_max_tokens' => env('AITRANSLATOR_CLAUDE_MAX_TOKENS', 4000),
+
     'default_driver' => env('AITRANSLATOR_DEFAULT_DRIVER', 'claude'),
 
     /*

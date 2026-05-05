@@ -9,3 +9,6 @@ v1.0.3:
     - Update of console command for batch translation
 v1.0.4:
     - Update of console command to sleep after each translation
+v1.0.5:
+    - Update claude driver to support strict json output and update admin panel
+      for bulk approving/rejecting

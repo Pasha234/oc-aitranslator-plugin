@@ -19,4 +19,28 @@
         <i class="icon-delete"></i>
         <?= __("Delete") ?>
     </button>
+
+    <button
+        class="btn btn-success"
+        data-request="onBulkApprove"
+        data-request-message="<?= __("Approving...") ?>"
+        data-request-confirm="<?= __("Approve selected jobs?") ?>"
+        data-list-checked-trigger
+        data-list-checked-request
+        disabled>
+        <i class="icon-check"></i>
+        <?= __("Approve") ?> <span data-list-checked-counter></span>
+    </button>
+
+    <button
+        class="btn btn-danger"
+        data-request="onBulkReject"
+        data-request-message="<?= __("Rejecting...") ?>"
+        data-request-confirm="<?= __("Reject selected jobs?") ?>"
+        data-list-checked-trigger
+        data-list-checked-request
+        disabled>
+        <i class="icon-ban"></i>
+        <?= __("Reject") ?> <span data-list-checked-counter></span>
+    </button>
 </div>
