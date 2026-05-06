@@ -4,9 +4,12 @@ namespace PalPalych\AiTranslator\Classes\Drivers;
 
 use Anthropic\Client;
 use Anthropic\Core\Exceptions\APIException;
+use Anthropic\Core\Exceptions\APIConnectionException;
 use Anthropic\Messages\JSONOutputFormat;
 use Anthropic\Messages\OutputConfig;
 use Anthropic\RequestOptions;
+use GuzzleHttp\Client as GuzzleClient;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use PalPalych\AiTranslator\Models\Settings;
 use PalPalych\AiTranslator\Classes\Dto\TranslationRequestDto;
 use PalPalych\AiTranslator\Classes\Dto\TranslationResponseDto;
@@ -22,7 +25,20 @@ class ClaudeDriver implements LlmDriver
     public function __construct()
     {
         $this->apiKey = Settings::get('anthropic_api_key');
-        $this->client = new Client(apiKey: $this->apiKey);
+
+        $psr17Factory = new Psr17Factory();
+        $this->client = new Client(
+            apiKey: $this->apiKey,
+            requestOptions: RequestOptions::with(
+                transporter: new GuzzleClient([
+                    'timeout' => 120,
+                    'connect_timeout' => 30,
+                ]),
+                uriFactory: $psr17Factory,
+                streamFactory: $psr17Factory,
+                requestFactory: $psr17Factory,
+            )
+        );
     }
 
     public function translate(TranslationRequestDto $request): TranslationResponseDto
@@ -63,6 +79,8 @@ EOT;
                 temperature: 0.3,
                 requestOptions: $requestOptions,
             );
+        } catch (APIConnectionException $e) {
+            throw new \Exception('Claude API Connection Error: ' . $this->formatApiException($e), 0, $e);
         } catch (APIException $e) {
             throw new \Exception('Claude API Error: ' . $e->getMessage(), 0, $e);
         }
@@ -164,6 +182,22 @@ EOT;
         $maxTokens = (int) Settings::get('claude_max_tokens', $this->defaultMaxTokens);
 
         return max(1024, min($maxTokens, 64000));
+    }
+
+    private function formatApiException(APIException $exception): string
+    {
+        $messages = [trim($exception->getMessage())];
+
+        $previous = $exception->getPrevious();
+        $depth = 0;
+
+        while ($previous && $depth < 10) {
+            $messages[] = get_class($previous) . ': ' . $previous->getMessage();
+            $previous = $previous->getPrevious();
+            $depth++;
+        }
+
+        return implode(' | ', array_filter($messages));
     }
 
     private function extractJson($text)
