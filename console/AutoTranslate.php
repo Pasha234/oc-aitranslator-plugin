@@ -10,7 +10,6 @@ use October\Rain\Database\Traits\Multisite;
 use System\Models\SiteDefinition;
 use PalPalych\AiTranslator\Models\Job;
 use PalPalych\AiTranslator\Classes\JobManager;
-use PalPalych\AiTranslator\Classes\TranslationService;
 
 class AutoTranslate extends Command
 {
@@ -35,7 +34,7 @@ class AutoTranslate extends Command
         {--all-sites : Translate to every non-primary site}
         {--list-models : List discovered AI translatable models and exit}
         {--limit=10 : How many records to process per target site}
-        {--delay=60 : Seconds to wait after each successful translation}';
+        {--delay=60 : Seconds to wait after each queued translation job}';
 
     public function handle()
     {
@@ -77,7 +76,7 @@ class AutoTranslate extends Command
         $this->info("Source: {$primarySite->name} ({$primarySite->locale})");
         $this->info("Model: {$modelClass}");
         $this->info("Batch Size: {$limit} per target site");
-        $this->info("Delay: {$delay} seconds after each successful translation");
+        $this->info("Delay: {$delay} seconds after each queued translation job");
 
         foreach ($targetSites as $targetSite) {
             $this->processTargetSite($modelClass, $primarySite, $targetSite, $limit, $delay);
@@ -101,20 +100,19 @@ class AutoTranslate extends Command
         $this->info("Found {$records->count()} records to process...");
 
         $jobManager = new JobManager();
-        $service = new TranslationService();
 
         $bar = $this->output->createProgressBar($records->count());
         $bar->start();
 
         foreach ($records as $record) {
             try {
-                Site::withContext($primarySite->id, function() use ($jobManager, $service, $record, $targetSite) {
+                Site::withContext($primarySite->id, function() use ($jobManager, $record, $targetSite) {
                     $job = $jobManager->createJob($record, $targetSite->locale);
 
                     $job->target_site_id = $targetSite->id;
                     $job->save();
 
-                    $service->processJob($job->id);
+                    $jobManager->dispatchJob($job);
                 });
 
                 if ($delay > 0) {

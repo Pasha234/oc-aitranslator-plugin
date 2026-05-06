@@ -9,6 +9,7 @@ use PalPalych\AiTranslator\Models\FieldTranslation;
 use PalPalych\AiTranslator\Models\Job;
 use PalPalych\Aitranslator\Models\Job\JobStatus;
 use PalPalych\AiTranslator\Models\Settings;
+use PalPalych\AiTranslator\Classes\Jobs\ProcessTranslationJob;
 
 class JobManager
 {
@@ -49,5 +50,10 @@ class JobManager
         }
 
         return $job;
+    }
+
+    public function dispatchJob(Job $job): void
+    {
+        ProcessTranslationJob::dispatch($job->id);
     }
 }
