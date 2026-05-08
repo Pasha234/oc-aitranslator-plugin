@@ -28,11 +28,13 @@ class ProcessTranslationJob implements ShouldQueue
 
     public function handle(TranslationService $service): void
     {
-        $service->processJob($this->jobId);
-
-        $delay = (int) config('palpalych.aitranslator::queue_delay', 60);
-        if ($delay > 0) {
-            sleep($delay);
+        try {
+            $service->processJob($this->jobId);
+        } finally {
+            $delay = (int) config('palpalych.aitranslator::queue_delay', 60);
+            if ($delay > 0) {
+                sleep($delay);
+            }
         }
     }
 }

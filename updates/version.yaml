@@ -16,3 +16,5 @@ v1.0.6:
     - Fix ClaudeDriver for console command use
 v1.0.7:
     - Add queuing for translation jobs
+v1.0.8:
+    - Fix delay between jobs
