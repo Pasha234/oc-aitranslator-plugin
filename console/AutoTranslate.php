@@ -10,6 +10,7 @@ use October\Rain\Database\Traits\Multisite;
 use System\Models\SiteDefinition;
 use PalPalych\AiTranslator\Models\Job;
 use PalPalych\AiTranslator\Classes\JobManager;
+use PalPalych\AiTranslator\Classes\Contracts\PublishesAiTranslations;
 
 class AutoTranslate extends Command
 {
@@ -33,6 +34,7 @@ class AutoTranslate extends Command
         {target_site_id? : The ID of the Site you want to translate TO}
         {--all-sites : Translate to every non-primary site}
         {--list-models : List discovered AI translatable models and exit}
+        {--auto-publish : Apply and publish translated records automatically when queued jobs complete}
         {--limit=10 : How many records to process per target site}
         {--delay=60 : Seconds to wait after each queued translation job}';
 
@@ -46,6 +48,7 @@ class AutoTranslate extends Command
         $modelClass = $this->resolveModelClass();
         $limit = (int) $this->option('limit');
         $delay = (int) $this->option('delay');
+        $autoPublish = (bool) $this->option('auto-publish');
 
         if (!$modelClass) {
             return;
@@ -58,6 +61,11 @@ class AutoTranslate extends Command
 
         if (!$this->isAiTranslatableModel($modelClass)) {
             $this->error("Model class [$modelClass] does not implement AiTranslatableModel.");
+            return;
+        }
+
+        if ($autoPublish && !$this->isAutoPublishableModel($modelClass)) {
+            $this->error("Model class [$modelClass] must implement " . PublishesAiTranslations::class . " when using --auto-publish.");
             return;
         }
 
@@ -76,16 +84,17 @@ class AutoTranslate extends Command
         $this->info("Source: {$primarySite->name} ({$primarySite->locale})");
         $this->info("Model: {$modelClass}");
         $this->info("Batch Size: {$limit} per target site");
+        $this->info("Mode: " . ($autoPublish ? 'Queue with auto-publish' : 'Queue for review'));
         $this->info("Delay: {$delay} seconds after each queued translation job");
 
         foreach ($targetSites as $targetSite) {
-            $this->processTargetSite($modelClass, $primarySite, $targetSite, $limit, $delay);
+            $this->processTargetSite($modelClass, $primarySite, $targetSite, $limit, $delay, $autoPublish);
         }
 
         $this->info("Batch completed.");
     }
 
-    protected function processTargetSite(string $modelClass, SiteDefinition $primarySite, SiteDefinition $targetSite, int $limit, int $delay): void
+    protected function processTargetSite(string $modelClass, SiteDefinition $primarySite, SiteDefinition $targetSite, int $limit, int $delay, bool $autoPublish): void
     {
         $this->newLine();
         $this->info("Target: {$targetSite->name} ({$targetSite->locale})");
@@ -106,13 +115,13 @@ class AutoTranslate extends Command
 
         foreach ($records as $record) {
             try {
-                Site::withContext($primarySite->id, function() use ($jobManager, $record, $targetSite) {
+                Site::withContext($primarySite->id, function() use ($jobManager, $record, $targetSite, $autoPublish) {
                     $job = $jobManager->createJob($record, $targetSite->locale);
 
                     $job->target_site_id = $targetSite->id;
                     $job->save();
 
-                    $jobManager->dispatchJob($job);
+                    $jobManager->dispatchJob($job, $autoPublish);
                 });
 
                 if ($delay > 0) {
@@ -277,6 +286,15 @@ class AutoTranslate extends Command
 
         return $model instanceof Model
             && in_array(\PalPalych\AiTranslator\Behaviors\AiTranslatableModel::class, (array) $model->implement);
+    }
+
+    protected function isAutoPublishableModel(string $modelClass): bool
+    {
+        if (!class_exists($modelClass)) {
+            return false;
+        }
+
+        return (new $modelClass()) instanceof PublishesAiTranslations;
     }
 
     protected function listModelChoices(): void

@@ -52,8 +52,8 @@ class JobManager
         return $job;
     }
 
-    public function dispatchJob(Job $job): void
+    public function dispatchJob(Job $job, bool $autoPublish = false): void
     {
-        ProcessTranslationJob::dispatch($job->id);
+        ProcessTranslationJob::dispatch($job->id, $autoPublish);
     }
 }

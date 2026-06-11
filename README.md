@@ -123,9 +123,14 @@ You can run bulk translations via the command line. This is useful for translati
 
 # Example: Translate 10 Stories to Site ID 2
 php artisan aitranslator:batch "PalPalych\Stories\Models\Story" 2 --limit=10
+
+# Queue translation jobs, then apply and publish from the worker
+php artisan aitranslator:batch "PalPalych\Stories\Models\Story" 2 --limit=10 --auto-publish
 ```
 
 The batch command puts jobs into the `Review` status. You must go to the **AI Translations > Jobs** menu in the backend to approve them.
+
+With `--auto-publish`, the command still queues translation jobs. When each queued job completes, the worker applies the translation to the target site record and calls `publishAiTranslation()` on that target record. The model must implement `PalPalych\AiTranslator\Classes\Contracts\PublishesAiTranslations`.
 
 ---
 
