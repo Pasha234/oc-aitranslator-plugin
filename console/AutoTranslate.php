@@ -155,7 +155,7 @@ class AutoTranslate extends Command
         do {
             $batch = new Collection();
             Site::withContext($primarySite->id, function() use ($modelClass, $page, $pageSize, &$batch) {
-                $batch = $modelClass::orderBy('created_at', 'desc')
+                $batch = $modelClass::orderBy('id', 'asc')
                     ->skip($page * $pageSize)
                     ->take($pageSize)
                     ->get();

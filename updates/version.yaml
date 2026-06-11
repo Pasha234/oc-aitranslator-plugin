@@ -20,3 +20,5 @@ v1.0.8:
     - Fix delay between jobs
 v1.0.9:
     - Add auto publish for console command
+v1.0.10:
+    - Add sorting by id asc
