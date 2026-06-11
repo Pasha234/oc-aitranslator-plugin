@@ -28,11 +28,13 @@ class AutoTranslate extends Command
      * @var string Signature
      * Example: php artisan aitranslator:batch "PalPalych\Stories\Models\Story" 2 --limit=10
      * Example: php artisan aitranslator:batch --all-sites --limit=10
+     * Example: php artisan aitranslator:batch "PalPalych\Stories\Models\Story" 1 --source-site=2 --limit=10
      */
     protected $signature = 'aitranslator:batch
         {model? : The Model Class (e.g. PalPalych\Stories\Models\Story)}
         {target_site_id? : The ID of the Site you want to translate TO}
-        {--all-sites : Translate to every non-primary site}
+        {--source-site= : The ID of the Site you want to translate FROM. Defaults to the primary site}
+        {--all-sites : Translate to every site except the source site}
         {--list-models : List discovered AI translatable models and exit}
         {--auto-publish : Apply and publish translated records automatically when queued jobs complete}
         {--limit=10 : How many records to process per target site}
@@ -69,37 +71,36 @@ class AutoTranslate extends Command
             return;
         }
 
-        $primarySite = SiteDefinition::where('is_primary', true)->first();
-        if (!$primarySite) {
-            $this->error("No Primary Site found.");
+        $sourceSite = $this->resolveSourceSite();
+        if (!$sourceSite) {
             return;
         }
 
-        $targetSites = $this->resolveTargetSites($primarySite);
+        $targetSites = $this->resolveTargetSites($sourceSite);
         if ($targetSites->count() === 0) {
             $this->error("No target sites selected.");
             return;
         }
 
-        $this->info("Source: {$primarySite->name} ({$primarySite->locale})");
+        $this->info("Source: {$sourceSite->name} ({$sourceSite->locale})");
         $this->info("Model: {$modelClass}");
         $this->info("Batch Size: {$limit} per target site");
         $this->info("Mode: " . ($autoPublish ? 'Queue with auto-publish' : 'Queue for review'));
         $this->info("Delay: {$delay} seconds after each queued translation job");
 
         foreach ($targetSites as $targetSite) {
-            $this->processTargetSite($modelClass, $primarySite, $targetSite, $limit, $delay, $autoPublish);
+            $this->processTargetSite($modelClass, $sourceSite, $targetSite, $limit, $delay, $autoPublish);
         }
 
         $this->info("Batch completed.");
     }
 
-    protected function processTargetSite(string $modelClass, SiteDefinition $primarySite, SiteDefinition $targetSite, int $limit, int $delay, bool $autoPublish): void
+    protected function processTargetSite(string $modelClass, SiteDefinition $sourceSite, SiteDefinition $targetSite, int $limit, int $delay, bool $autoPublish): void
     {
         $this->newLine();
         $this->info("Target: {$targetSite->name} ({$targetSite->locale})");
 
-        $records = $this->findRecordsForTargetSite($modelClass, $primarySite, $targetSite, $limit);
+        $records = $this->findRecordsForTargetSite($modelClass, $sourceSite, $targetSite, $limit);
 
         if ($records->count() === 0) {
             $this->info("No untranslated records found.");
@@ -115,7 +116,7 @@ class AutoTranslate extends Command
 
         foreach ($records as $record) {
             try {
-                Site::withContext($primarySite->id, function() use ($jobManager, $record, $targetSite, $autoPublish) {
+                Site::withContext($sourceSite->id, function() use ($jobManager, $record, $targetSite, $autoPublish) {
                     $job = $jobManager->createJob($record, $targetSite->locale);
 
                     $job->target_site_id = $targetSite->id;
@@ -140,7 +141,7 @@ class AutoTranslate extends Command
         $this->newLine();
     }
 
-    protected function findRecordsForTargetSite(string $modelClass, SiteDefinition $primarySite, SiteDefinition $targetSite, int $limit): Collection
+    protected function findRecordsForTargetSite(string $modelClass, SiteDefinition $sourceSite, SiteDefinition $targetSite, int $limit): Collection
     {
         $records = new Collection();
         $existingJobIds = Job::where('translatable_type', $modelClass)
@@ -154,7 +155,7 @@ class AutoTranslate extends Command
 
         do {
             $batch = new Collection();
-            Site::withContext($primarySite->id, function() use ($modelClass, $page, $pageSize, &$batch) {
+            Site::withContext($sourceSite->id, function() use ($modelClass, $page, $pageSize, &$batch) {
                 $batch = $modelClass::orderBy('id', 'asc')
                     ->skip($page * $pageSize)
                     ->take($pageSize)
@@ -205,16 +206,39 @@ class AutoTranslate extends Command
         return $this->choice('Which model do you want to translate?', $models);
     }
 
-    protected function resolveTargetSites(SiteDefinition $primarySite): Collection
+    protected function resolveSourceSite(): ?SiteDefinition
+    {
+        $sourceSiteId = $this->option('source-site');
+
+        if ($sourceSiteId) {
+            $sourceSite = SiteDefinition::find((int) $sourceSiteId);
+            if (!$sourceSite) {
+                $this->error("Source Site ID [$sourceSiteId] not found.");
+                return null;
+            }
+
+            return $sourceSite;
+        }
+
+        $primarySite = SiteDefinition::where('is_primary', true)->first();
+        if (!$primarySite) {
+            $this->error("No Primary Site found.");
+            return null;
+        }
+
+        return $primarySite;
+    }
+
+    protected function resolveTargetSites(SiteDefinition $sourceSite): Collection
     {
         if ($this->option('all-sites')) {
-            return SiteDefinition::where('is_primary', false)->get();
+            return SiteDefinition::where('id', '!=', $sourceSite->id)->get();
         }
 
         $targetSiteId = $this->argument('target_site_id');
 
         if (!$targetSiteId && $this->input->isInteractive()) {
-            $siteOptions = SiteDefinition::where('is_primary', false)
+            $siteOptions = SiteDefinition::where('id', '!=', $sourceSite->id)
                 ->get()
                 ->mapWithKeys(function($site) {
                     return [$site->id => "{$site->name} ({$site->locale})"];
@@ -227,8 +251,8 @@ class AutoTranslate extends Command
 
         $targetSiteId = (int) $targetSiteId;
 
-        if ($primarySite->id === $targetSiteId) {
-            $this->error("Target site cannot be the Primary site.");
+        if ($sourceSite->id === $targetSiteId) {
+            $this->error("Target site cannot be the same as the source site.");
             return new Collection();
         }
 

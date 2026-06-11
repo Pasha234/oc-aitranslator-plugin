@@ -22,3 +22,5 @@ v1.0.9:
     - Add auto publish for console command
 v1.0.10:
     - Add sorting by id asc
+v1.0.11:
+    - Add source site parameter to console command

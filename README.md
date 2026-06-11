@@ -124,6 +124,9 @@ You can run bulk translations via the command line. This is useful for translati
 # Example: Translate 10 Stories to Site ID 2
 php artisan aitranslator:batch "PalPalych\Stories\Models\Story" 2 --limit=10
 
+# Translate from Site ID 2 to Site ID 1 instead of using the primary site as source
+php artisan aitranslator:batch "PalPalych\Stories\Models\Story" 1 --source-site=2 --limit=10
+
 # Queue translation jobs, then apply and publish from the worker
 php artisan aitranslator:batch "PalPalych\Stories\Models\Story" 2 --limit=10 --auto-publish
 ```
