@@ -7,7 +7,7 @@ use October\Rain\Database\Model;
 use PalPalych\AiTranslator\Behaviors\AiTranslatableModel;
 use PalPalych\AiTranslator\Models\FieldTranslation;
 use PalPalych\AiTranslator\Models\Job;
-use PalPalych\Aitranslator\Models\Job\JobStatus;
+use PalPalych\AiTranslator\Models\Job\JobStatus;
 use PalPalych\AiTranslator\Models\Settings;
 use PalPalych\AiTranslator\Classes\Jobs\ProcessTranslationJob;
 

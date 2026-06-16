@@ -24,3 +24,5 @@ v1.0.10:
     - Add sorting by id asc
 v1.0.11:
     - Add source site parameter to console command
+v1.0.12:
+    - Fix slug creation

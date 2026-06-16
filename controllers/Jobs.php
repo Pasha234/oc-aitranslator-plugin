@@ -6,8 +6,8 @@ use Backend\Facades\Backend;
 use Backend\Classes\FormField;
 use Backend\Classes\Controller;
 use Backend\FormWidgets\RichEditor;
-use PalPalych\Aitranslator\Models\Job;
-use PalPalych\Aitranslator\Models\Job\JobStatus;
+use PalPalych\AiTranslator\Models\Job;
+use PalPalych\AiTranslator\Models\Job\JobStatus;
 use PalPalych\AiTranslator\Classes\TranslationService;
 
 /**

@@ -10,7 +10,7 @@ use Illuminate\Queue\SerializesModels;
 use PalPalych\AiTranslator\Classes\TranslationService;
 use PalPalych\AiTranslator\Classes\Contracts\PublishesAiTranslations;
 use PalPalych\AiTranslator\Models\Job;
-use PalPalych\Aitranslator\Models\Job\JobStatus;
+use PalPalych\AiTranslator\Models\Job\JobStatus;
 use System\Models\SiteDefinition;
 
 class ProcessTranslationJob implements ShouldQueue

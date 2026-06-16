@@ -7,7 +7,7 @@ use Carbon\CarbonInterface;
 use October\Rain\Support\Arr;
 use October\Rain\Database\Collection;
 use Illuminate\Database\Eloquent\Builder;
-use PalPalych\Aitranslator\Models\Job\JobStatus;
+use PalPalych\AiTranslator\Models\Job\JobStatus;
 
 /**
  * @mixin Builder

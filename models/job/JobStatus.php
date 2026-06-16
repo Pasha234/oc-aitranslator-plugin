@@ -1,6 +1,6 @@
 <?php
 
-namespace PalPalych\Aitranslator\Models\Job;
+namespace PalPalych\AiTranslator\Models\Job;
 
 enum JobStatus: int
 {

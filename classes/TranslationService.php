@@ -4,11 +4,13 @@ namespace PalPalych\AiTranslator\Classes;
 
 use DB;
 use Model;
+use App;
 use Exception;
+use October\Rain\Support\Str;
 use PalPalych\AiTranslator\Models\Job;
 use October\Rain\Database\Traits\Multisite;
 use PalPalych\AiTranslator\Models\Settings;
-use PalPalych\Aitranslator\Models\Job\JobStatus;
+use PalPalych\AiTranslator\Models\Job\JobStatus;
 use PalPalych\AiTranslator\Classes\Dto\ContentDto;
 use PalPalych\AiTranslator\Classes\Dto\TranslationRequestDto;
 
@@ -87,11 +89,15 @@ class TranslationService
 
         $targetRecord = $this->getOrInitTargetRecord($sourceModel, $job->target_site_id);
 
+        $translatedFieldNames = [];
         foreach ($job->fields as $field) {
             $val = $field->final_value ?? $field->ai_value;
 
             $targetRecord->setAttribute($field->field_name, $val);
+            $translatedFieldNames[] = $field->field_name;
         }
+
+        $this->refreshSlugForTranslation($targetRecord, $sourceModel, $job->target_site_id, $translatedFieldNames);
 
         \Site::withGlobalContext(function () use (&$targetRecord) {
             $targetRecord->save();
@@ -148,22 +154,14 @@ class TranslationService
             throw new Exception("Could not create target record for Site ID: $targetSiteId");
         }
 
+        $translatedFieldNames = [];
         foreach ($job->fields as $field) {
             $value = $field->final_value ?? $field->ai_value;
             $targetRecord->{$field->field_name} = $value;
+            $translatedFieldNames[] = $field->field_name;
         }
 
-        if (in_array(\October\Rain\Database\Traits\Sluggable::class, class_uses_recursive($targetRecord)) && isset($targetRecord->slug)) {
-            $slugExists = $sourceModel::withoutGlobalScopes()
-                ->where('site_id', $targetSiteId)
-                ->where('slug', $targetRecord->slug)
-                ->where('id', '!=', $targetRecord->id)
-                ->exists();
-
-            if ($slugExists) {
-                $targetRecord->slug = $targetRecord->slug . '-' . $targetSiteId;
-            }
-        }
+        $this->refreshSlugForTranslation($targetRecord, $sourceModel, $targetSiteId, $translatedFieldNames);
 
         \Site::withContext($targetSiteId, function() use ($targetRecord) {
             $targetRecord->save();
@@ -173,5 +171,80 @@ class TranslationService
         $job->save();
 
         return $targetRecord;
+    }
+
+    protected function refreshSlugForTranslation(Model $targetRecord, Model $sourceModel, $targetSiteId, array $translatedFieldNames): void
+    {
+        if (!$this->modelHasAttribute($targetRecord, 'slug')) {
+            return;
+        }
+
+        $slugSourceFields = $this->getSlugSourceFields($targetRecord);
+        if (!$slugSourceFields) {
+            return;
+        }
+
+        $translatedFieldNames = array_flip($translatedFieldNames);
+        $sourceValues = [];
+
+        foreach ($slugSourceFields as $fieldName) {
+            if (!isset($translatedFieldNames[$fieldName])) {
+                continue;
+            }
+
+            $value = $targetRecord->getAttribute($fieldName);
+            if ($value !== null && trim((string) $value) !== '') {
+                $sourceValues[] = $value;
+            }
+        }
+
+        if (!$sourceValues) {
+            return;
+        }
+
+        $slug = Str::slug(mb_substr(implode(' ', $sourceValues), 0, 175), '-', App::getLocale());
+        if ($slug === '') {
+            return;
+        }
+
+        $targetRecord->slug = $this->makeUniqueSlug($sourceModel, $targetRecord, $targetSiteId, $slug);
+    }
+
+    protected function getSlugSourceFields(Model $targetRecord): array
+    {
+        return array_values(array_filter(['title', 'name'], function ($field) use ($targetRecord) {
+            return $this->modelHasAttribute($targetRecord, $field);
+        }));
+    }
+
+    protected function modelHasAttribute(Model $model, string $attribute): bool
+    {
+        return array_key_exists($attribute, $model->getAttributes()) || $model->getAttribute($attribute) !== null;
+    }
+
+    protected function makeUniqueSlug(Model $sourceModel, Model $targetRecord, $targetSiteId, string $slug): string
+    {
+        $baseSlug = $slug;
+        $counter = 1;
+
+        while ($this->slugExists($sourceModel, $targetRecord, $targetSiteId, $slug)) {
+            $counter++;
+            $slug = $baseSlug . '-' . $counter;
+        }
+
+        return $slug;
+    }
+
+    protected function slugExists(Model $sourceModel, Model $targetRecord, $targetSiteId, string $slug): bool
+    {
+        $query = $sourceModel::withoutGlobalScopes()
+            ->where('slug', $slug)
+            ->where($targetRecord->getKeyName(), '!=', $targetRecord->getKey());
+
+        if (\Schema::hasColumn($targetRecord->getTable(), 'site_id')) {
+            $query->where('site_id', $targetSiteId);
+        }
+
+        return $query->exists();
     }
 }
