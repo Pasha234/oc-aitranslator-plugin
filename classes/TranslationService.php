@@ -4,7 +4,6 @@ namespace PalPalych\AiTranslator\Classes;
 
 use DB;
 use Model;
-use App;
 use Exception;
 use October\Rain\Support\Str;
 use PalPalych\AiTranslator\Models\Job;
@@ -13,6 +12,8 @@ use PalPalych\AiTranslator\Models\Settings;
 use PalPalych\AiTranslator\Models\Job\JobStatus;
 use PalPalych\AiTranslator\Classes\Dto\ContentDto;
 use PalPalych\AiTranslator\Classes\Dto\TranslationRequestDto;
+use PalPalych\AiTranslator\Classes\Exceptions\PrimarySlugUnavailableException;
+use System\Models\SiteDefinition;
 
 class TranslationService
 {
@@ -202,12 +203,50 @@ class TranslationService
             return;
         }
 
-        $slug = Str::slug(mb_substr(implode(' ', $sourceValues), 0, 175), '-', App::getLocale());
+        $targetSite = SiteDefinition::find($targetSiteId);
+        $targetLocale = $targetSite?->locale ?: 'en';
+        $slug = Str::slug(
+            mb_substr(implode(' ', $sourceValues), 0, 175),
+            '-',
+            $targetLocale
+        );
+
         if ($slug === '') {
-            return;
+            $slug = $this->getPrimarySiteSlug($sourceModel, $targetSiteId);
         }
 
         $targetRecord->slug = $this->makeUniqueSlug($sourceModel, $targetRecord, $targetSiteId, $slug);
+    }
+
+    protected function getPrimarySiteSlug(Model $sourceModel, $targetSiteId): string
+    {
+        $primarySite = SiteDefinition::where('is_primary', true)->first();
+
+        if (!$primarySite) {
+            throw new PrimarySlugUnavailableException(
+                'Cannot generate a fallback slug because the primary site is not configured.'
+            );
+        }
+
+        if ((int) $primarySite->id === (int) $targetSiteId) {
+            throw new PrimarySlugUnavailableException(
+                'Cannot generate a slug for the primary site from its own untranslated record.'
+            );
+        }
+
+        $primaryRecord = null;
+        \Site::withGlobalContext(function () use ($sourceModel, $primarySite, &$primaryRecord) {
+            $primaryRecord = $sourceModel->findForSite($primarySite->id);
+        });
+
+        $primarySlug = trim((string) $primaryRecord?->getAttribute('slug'));
+        if ($primarySlug === '') {
+            throw new PrimarySlugUnavailableException(
+                "The primary site translation for this record does not have a slug yet."
+            );
+        }
+
+        return mb_substr($primarySlug, 0, 175);
     }
 
     protected function getSlugSourceFields(Model $targetRecord): array

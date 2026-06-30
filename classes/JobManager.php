@@ -52,8 +52,25 @@ class JobManager
         return $job;
     }
 
-    public function dispatchJob(Job $job, bool $autoPublish = false): void
+    public function dispatchJob(
+        Job $job,
+        bool $autoPublish = false,
+        bool $processTranslation = true
+    ): void
     {
-        ProcessTranslationJob::dispatch($job->id, $autoPublish);
+        ProcessTranslationJob::dispatch($job->id, $autoPublish, $processTranslation);
+    }
+
+    /**
+     * Queue only the apply/publish phase using translation values already
+     * stored on the job. The translation driver will never be called.
+     */
+    public function dispatchApplyJob(Job $job, int $delaySeconds = 0): void
+    {
+        $pendingDispatch = ProcessTranslationJob::dispatch($job->id, true, false);
+
+        if ($delaySeconds > 0) {
+            $pendingDispatch->delay($delaySeconds);
+        }
     }
 }

@@ -135,6 +135,22 @@ The batch command puts jobs into the `Review` status. You must go to the **AI Tr
 
 With `--auto-publish`, the command still queues translation jobs. When each queued job completes, the worker applies the translation to the target site record and calls `publishAiTranslation()` on that target record. The model must implement `PalPalych\AiTranslator\Classes\Contracts\PublishesAiTranslations`.
 
+### Slugs for non-Latin languages
+
+When a translated `title` or `name` cannot be converted to a URL slug, the
+plugin uses the corresponding slug from the primary site. If that primary-site
+translation is not ready yet, an auto-publish job remains in `Review` and is
+queued again in apply-only mode. Its saved translation is reused, so the AI
+driver is not called again.
+
+The retry delay defaults to 300 seconds, and retry attempts stop after 10
+apply-only retries. Both values can be configured with:
+
+```dotenv
+AITRANSLATOR_SLUG_FALLBACK_RETRY_DELAY=300
+AITRANSLATOR_SLUG_FALLBACK_MAX_RETRIES=10
+```
+
 ---
 
 ## Managing Prompts

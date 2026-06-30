@@ -7,6 +7,10 @@ return [
 
     'queue_delay' => env('AITRANSLATOR_QUEUE_DELAY', 60),
 
+    'slug_fallback_retry_delay' => env('AITRANSLATOR_SLUG_FALLBACK_RETRY_DELAY', 300),
+
+    'slug_fallback_max_retries' => env('AITRANSLATOR_SLUG_FALLBACK_MAX_RETRIES', 10),
+
     'default_driver' => env('AITRANSLATOR_DEFAULT_DRIVER', 'claude'),
 
     /*
