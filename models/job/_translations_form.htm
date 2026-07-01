@@ -5,6 +5,8 @@
 
     // Retrieve the widgets prepared in the Controller
     $widgets = $this->vars['translationWidgets'] ?? [];
+    $fieldFormatter = $this->vars['translationFieldFormatter']
+        ?? new \PalPalych\AiTranslator\Classes\TranslationFieldFormatter();
 ?>
 
 <?php if ($translatable): ?>
@@ -32,11 +34,21 @@
                             <?= ucfirst($field->field_name) ?>
                             <span class="text-muted">(<?= e(trans('palpalych.aitranslator::lang.job.original_value')) ?>)</span>
                         </label>
-                        <!-- Read-only container -->
-                        <div class="form-control control-disabled"
-                             style="height: 350px; overflow-y: auto; background-color: #f9f9f9; border: 1px solid #e1e1e1;">
-                            <?= $field->original_value ?>
-                        </div>
+                        <?php if ($fieldFormatter->isRichText($field->field_name)): ?>
+                            <div class="form-control control-disabled"
+                                 style="height: 350px; overflow-y: auto; background-color: #f9f9f9; border: 1px solid #e1e1e1;">
+                                <?= $field->original_value ?>
+                            </div>
+                        <?php else: ?>
+                            <textarea
+                                class="form-control field-textarea control-disabled"
+                                style="height: 350px;"
+                                readonly
+                            ><?= e($fieldFormatter->sanitize(
+                                $field->field_name,
+                                $field->original_value
+                            )) ?></textarea>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -48,14 +60,20 @@
                             <span class="text-muted">(<?= e(trans('palpalych.aitranslator::lang.job.final_value')) ?>)</span>
                         </label>
 
-                        <!-- Render the Widget -->
-                        <?php if (isset($widgets[$field->id])): ?>
+                        <?php if ($fieldFormatter->isRichText($field->field_name) && isset($widgets[$field->id])): ?>
                             <!-- Force specific height on the wrapper to match left side -->
                             <div style="height: 350px; overflow-y: auto;">
                                 <?= $widgets[$field->id]->render() ?>
                             </div>
                         <?php else: ?>
-                            <div class="alert alert-danger">Widget not loaded for field <?= $field->id ?></div>
+                            <textarea
+                                name="translation_data[<?= $field->id ?>]"
+                                class="form-control field-textarea"
+                                style="height: 350px;"
+                            ><?= e($fieldFormatter->sanitize(
+                                $field->field_name,
+                                $field->final_value ?? $field->ai_value
+                            )) ?></textarea>
                         <?php endif; ?>
                     </div>
                 </div>

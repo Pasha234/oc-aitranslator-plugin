@@ -12,6 +12,7 @@ use Backend\Classes\ControllerBehavior;
 use PalPalych\AiTranslator\Classes\JobManager;
 use PalPalych\AiTranslator\Models\FieldTranslation;
 use PalPalych\AiTranslator\Classes\TranslationService;
+use PalPalych\AiTranslator\Classes\TranslationFieldFormatter;
 
 class TranslatableController extends ControllerBehavior
 {
@@ -85,10 +86,12 @@ class TranslatableController extends ControllerBehavior
 
         $service = new TranslationService();
         $service->processJob($job->id);
+        $formatter = new TranslationFieldFormatter();
 
         return $this->makePartial('$/palpalych/aitranslator/assets/html/_review_popup.htm', [
             'job' => $job,
-            'editorOptions' => config('editor.html_defaults.editor_options')
+            'editorOptions' => config('editor.html_defaults.editor_options'),
+            'fieldFormatter' => $formatter,
         ]);
     }
 
@@ -101,11 +104,20 @@ class TranslatableController extends ControllerBehavior
         $job = Job::findOrFail($jobId);
 
         DB::transaction(function() use ($fields, $jobId, &$targetRecord) {
-            foreach ($fields as $fieldId => $translation) {
-                FieldTranslation::where('id', $fieldId)
-                    ->update([
-                        'final_value' => $translation
-                    ]);
+            $formatter = new TranslationFieldFormatter();
+            $fieldTranslations = FieldTranslation::where('job_id', $jobId)
+                ->whereIn('id', array_keys((array) $fields))
+                ->get()
+                ->keyBy('id');
+
+            foreach ((array) $fields as $fieldId => $translation) {
+                $field = $fieldTranslations->get($fieldId);
+                if (!$field) {
+                    continue;
+                }
+
+                $field->final_value = $formatter->sanitize($field->field_name, $translation);
+                $field->save();
             }
 
             $service = new TranslationService();

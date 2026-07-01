@@ -11,6 +11,8 @@ return [
 
     'slug_fallback_max_retries' => env('AITRANSLATOR_SLUG_FALLBACK_MAX_RETRIES', 10),
 
+    'rich_text_fields' => ['body'],
+
     'default_driver' => env('AITRANSLATOR_DEFAULT_DRIVER', 'claude'),
 
     /*

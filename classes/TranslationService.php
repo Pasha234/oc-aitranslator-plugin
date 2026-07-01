@@ -17,6 +17,13 @@ use System\Models\SiteDefinition;
 
 class TranslationService
 {
+    protected TranslationFieldFormatter $fieldFormatter;
+
+    public function __construct()
+    {
+        $this->fieldFormatter = new TranslationFieldFormatter();
+    }
+
     /**
      * Process a Job ID: Fetch DB data -> Call AI -> Save DB data
      */
@@ -94,7 +101,10 @@ class TranslationService
         foreach ($job->fields as $field) {
             $val = $field->final_value ?? $field->ai_value;
 
-            $targetRecord->setAttribute($field->field_name, $val);
+            $targetRecord->setAttribute(
+                $field->field_name,
+                $this->fieldFormatter->sanitize($field->field_name, $val)
+            );
             $translatedFieldNames[] = $field->field_name;
         }
 
@@ -158,7 +168,10 @@ class TranslationService
         $translatedFieldNames = [];
         foreach ($job->fields as $field) {
             $value = $field->final_value ?? $field->ai_value;
-            $targetRecord->{$field->field_name} = $value;
+            $targetRecord->{$field->field_name} = $this->fieldFormatter->sanitize(
+                $field->field_name,
+                $value
+            );
             $translatedFieldNames[] = $field->field_name;
         }
 

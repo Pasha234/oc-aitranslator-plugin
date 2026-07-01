@@ -19,12 +19,7 @@
         <?php foreach($job->fields as $field): ?>
             <label><?= ucfirst($field->field_name) ?></label>
             <div class="form-group" style="margin-bottom: 20px;">
-
-                <!--
-                   We name the input fields[id][final_value]
-                   so we can easily process them as an array in PHP
-                -->
-                    <!-- Use Rich Editor for content -->
+                <?php if ($fieldFormatter->isRichText($field->field_name)): ?>
                     <div
                         class="field-richeditor size-giant layout-relative stretch"
                         data-control="richeditor"
@@ -36,8 +31,18 @@
                             class="form-control field-textarea"
                             data-richeditor-textarea
                             style="display: none"
-                        ><?= e($field->ai_value) ?></textarea>
+                        ><?= e($field->final_value ?? $field->ai_value) ?></textarea>
                     </div>
+                <?php else: ?>
+                    <textarea
+                        name="fields[<?= $field->id ?>]"
+                        class="form-control field-textarea"
+                        rows="6"
+                    ><?= e($fieldFormatter->sanitize(
+                        $field->field_name,
+                        $field->final_value ?? $field->ai_value
+                    )) ?></textarea>
+                <?php endif ?>
             </div>
         <?php endforeach ?>
 

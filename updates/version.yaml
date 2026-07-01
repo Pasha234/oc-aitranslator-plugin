@@ -26,3 +26,5 @@ v1.0.11:
     - Add source site parameter to console command
 v1.0.12:
     - Fix slug creation
+v1.0.13:
+    - Fix slug creation for some locales and fix rich editor

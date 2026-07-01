@@ -9,6 +9,7 @@ use Backend\FormWidgets\RichEditor;
 use PalPalych\AiTranslator\Models\Job;
 use PalPalych\AiTranslator\Models\Job\JobStatus;
 use PalPalych\AiTranslator\Classes\TranslationService;
+use PalPalych\AiTranslator\Classes\TranslationFieldFormatter;
 
 /**
  * Jobs Back-end Controller
@@ -40,8 +41,13 @@ class Jobs extends Controller
 
         if ($model && $model->fields) {
             $widgets = [];
+            $formatter = new TranslationFieldFormatter();
 
             foreach ($model->fields as $field) {
+                if (!$formatter->isRichText($field->field_name)) {
+                    continue;
+                }
+
                 $fieldName = "translation_data[{$field->id}]";
 
                 $formField = new FormField($fieldName, 'Translation');
@@ -64,6 +70,7 @@ class Jobs extends Controller
             }
 
             $this->vars['translationWidgets'] = $widgets;
+            $this->vars['translationFieldFormatter'] = $formatter;
         }
 
         return $this->asExtension('FormController')->update($recordId);
@@ -77,9 +84,22 @@ class Jobs extends Controller
         $data = post('translation_data');
 
         if (is_array($data)) {
+            $formatter = new TranslationFieldFormatter();
+            $fields = \PalPalych\AiTranslator\Models\FieldTranslation::whereIn(
+                'id',
+                array_keys($data)
+            )->where('job_id', $recordId)
+                ->get()
+                ->keyBy('id');
+
             foreach ($data as $id => $content) {
-                \PalPalych\AiTranslator\Models\FieldTranslation::where('id', $id)
-                    ->update(['final_value' => $content]);
+                $field = $fields->get($id);
+                if (!$field) {
+                    continue;
+                }
+
+                $field->final_value = $formatter->sanitize($field->field_name, $content);
+                $field->save();
             }
         }
 

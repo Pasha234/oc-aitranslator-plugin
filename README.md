@@ -151,6 +151,19 @@ AITRANSLATOR_SLUG_FALLBACK_RETRY_DELAY=300
 AITRANSLATOR_SLUG_FALLBACK_MAX_RETRIES=10
 ```
 
+### Rich-text translation fields
+
+Translation fields use regular textareas by default. Fields listed in
+`rich_text_fields` use October's rich editor instead:
+
+```php
+// plugins/palpalych/aitranslator/config/config.php
+'rich_text_fields' => ['body'],
+```
+
+HTML is removed from all other fields when translations are reviewed or
+applied, including existing jobs and auto-published translations.
+
 ---
 
 ## Managing Prompts
