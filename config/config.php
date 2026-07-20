@@ -5,6 +5,8 @@ return [
 
     'claude_max_tokens' => env('AITRANSLATOR_CLAUDE_MAX_TOKENS', 4000),
 
+    'claude_model' => env('AITRANSLATOR_CLAUDE_MODEL', 'claude-sonnet-4-5-20250929'),
+
     'queue_delay' => env('AITRANSLATOR_QUEUE_DELAY', 60),
 
     'slug_fallback_retry_delay' => env('AITRANSLATOR_SLUG_FALLBACK_RETRY_DELAY', 300),

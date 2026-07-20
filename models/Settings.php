@@ -7,6 +7,7 @@ use System\Models\SettingModel;
 
 /**
  * @property string $anthropic_api_key
+ * @property string $claude_model
  * @property int $claude_max_tokens
  * @property string $default_driver
  * @property int $default_prompt_id
@@ -29,6 +30,7 @@ class Settings extends SettingModel
     public function initSettingsData()
     {
         $this->anthropic_api_key = config('palpalych.aitranslator::anthropic_api_key');
+        $this->claude_model = config('palpalych.aitranslator::claude_model');
         $this->claude_max_tokens = config('palpalych.aitranslator::claude_max_tokens');
         $this->default_driver = config('palpalych.aitranslator::default_driver');
         $this->default_prompt_id = config('palpalych.aitranslator::default_prompt_id');

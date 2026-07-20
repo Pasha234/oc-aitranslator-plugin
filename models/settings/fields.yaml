@@ -8,6 +8,12 @@ tabs:
             label: Claude API Key
             span: left
 
+        claude_model:
+            label: Claude Model
+            type: text
+            span: right
+            comment: "Anthropic model identifier used for Claude translations."
+
         claude_max_tokens:
             label: Claude Max Tokens
             type: number

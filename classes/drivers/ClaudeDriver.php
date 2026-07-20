@@ -18,13 +18,17 @@ use PalPalych\AiTranslator\Classes\Contracts\LlmDriver;
 class ClaudeDriver implements LlmDriver
 {
     protected $apiKey;
-    protected $model = 'claude-sonnet-4-5-20250929'; // Or generic claude-3-opus
+    protected string $model;
     protected Client $client;
     protected int $defaultMaxTokens = 4000;
 
     public function __construct()
     {
         $this->apiKey = Settings::get('anthropic_api_key');
+        $this->model = (string) Settings::get(
+            'claude_model',
+            config('palpalych.aitranslator::claude_model', 'claude-sonnet-4-5-20250929')
+        );
 
         $psr17Factory = new Psr17Factory();
         $this->client = new Client(

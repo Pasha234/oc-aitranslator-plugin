@@ -18,11 +18,13 @@ This plugin provides an automated translation workflow for October CMS models us
 Go to **Settings > Translations > Translations** in the Backend.
 
 *   **Claude API Key:** Enter your Anthropic API Key.
+*   **Claude Model:** Enter the Anthropic model identifier to use (for example, `claude-sonnet-4-5-20250929`).
 *   **Default Driver:** Choose the AI driver (e.g., `Claude` or `Dummy` for testing).
 *   **Default Prompt:** Select which system instruction to use by default for new jobs.
 
 ### 2. Config File
 You can override defaults in `config/palpalych/aitranslator/config.php`:
+*   `claude_model`: Claude model identifier. It can also be set with `AITRANSLATOR_CLAUDE_MODEL`.
 *   `drivers`: List of registered AI drivers.
 
 ---
